@@ -71,6 +71,24 @@ main() {
       ccm_resolve_project_id
       return 0
       ;;
+    show)
+      # shellcheck source=../lib/id.sh
+      source "$CCM_ROOT/lib/id.sh"
+      # shellcheck source=../lib/history.sh
+      source "$CCM_ROOT/lib/history.sh"
+      shift
+      ccm_show_main "$@"
+      return $?
+      ;;
+    history)
+      # shellcheck source=../lib/id.sh
+      source "$CCM_ROOT/lib/id.sh"
+      # shellcheck source=../lib/history.sh
+      source "$CCM_ROOT/lib/history.sh"
+      shift
+      ccm_history_main "$@"
+      return $?
+      ;;
     *)
       _dispatch "$@"
       ;;

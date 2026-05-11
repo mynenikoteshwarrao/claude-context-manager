@@ -31,3 +31,14 @@ teardown() { ccm_teardown_tmphome; }
   [ "$status" -eq 0 ]
   [ -n "$output" ]
 }
+
+@test "ccm: show 1 reads from history.sh" {
+  cd "$CCM_TMPHOME"
+  pid="$(printf '%s' "$PWD" | sha1sum | cut -d' ' -f1 2>/dev/null || printf '%s' "$PWD" | shasum -a 1 | cut -d' ' -f1)"
+  mkdir -p "$HOME/.claude/context-manager/$pid/timeline"
+  echo "summary content" > "$HOME/.claude/context-manager/$pid/timeline/2026-05-01-1200.md"
+  echo '{"project_id":"'"$pid"'"}' > "$HOME/.claude/context-manager/$pid/meta.json"
+  run "$CCM_REPO_ROOT/bin/ccm" show 1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"summary content"* ]]
+}
