@@ -49,3 +49,7 @@ jobs:
         with:
           scandir: '.'
           ignore_paths: 'test'
+          severity: warning
+          # SC1091 (couldn't follow sourced file) and SC2012 (use find not ls)
+          # are notes — we have intentional `# shellcheck source=...` directives
+          # for the sourced libs, and ls is fine in directories we own.
