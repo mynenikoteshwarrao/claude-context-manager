@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate tag matches VERSION
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="v$(cat VERSION)"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "Tag $TAG does not match VERSION file ($VERSION)" >&2
+            exit 1
+          fi
+
+      - name: Build source tarball
+        run: |
+          VERSION="$(cat VERSION)"
+          PREFIX="claude-context-manager-${VERSION}"
+          git archive --format=tar.gz --prefix="${PREFIX}/" -o "${PREFIX}.tar.gz" "${GITHUB_REF#refs/tags/}"
+          shasum -a 256 "${PREFIX}.tar.gz" > SHA256SUMS
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="$(cat VERSION)"
+          gh release create "v${VERSION}" \
+            "claude-context-manager-${VERSION}.tar.gz" \
+            SHA256SUMS \
+            --title "v${VERSION}" \
+            --notes-file <(awk "/^## \\[?${VERSION}\\]?/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md)
+
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          VERSION="$(cat VERSION)"
+          SHA="$(awk '{print $1}' SHA256SUMS)"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/<user>/homebrew-ccm.git" tap
+          cp dist/homebrew/Formula/ccm.rb tap/Formula/ccm.rb
+          sed -i "s|v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/claude-context-manager-[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|v${VERSION}/claude-context-manager-${VERSION}|" tap/Formula/ccm.rb
+          sed -i "s/REPLACED_BY_RELEASE_WORKFLOW/${SHA}/" tap/Formula/ccm.rb
+          ( cd tap && git config user.email "bot@example.com" && git config user.name "ccm release bot" \
+            && git add Formula/ccm.rb && git commit -m "ccm v${VERSION}" && git push )
+
+      - name: Update Scoop bucket
+        env:
+          BUCKET_TOKEN: ${{ secrets.BUCKET_TOKEN }}
+        run: |
+          VERSION="$(cat VERSION)"
+          SHA="$(awk '{print $1}' SHA256SUMS)"
+          git clone "https://x-access-token:${BUCKET_TOKEN}@github.com/<user>/scoop-ccm.git" bucket
+          cp dist/scoop/bucket/ccm.json bucket/bucket/ccm.json
+          sed -i "s/REPLACED_BY_RELEASE_WORKFLOW/${SHA}/" bucket/bucket/ccm.json
+          sed -i "s/0.1.0/${VERSION}/g" bucket/bucket/ccm.json
+          ( cd bucket && git config user.email "bot@example.com" && git config user.name "ccm release bot" \
+            && git add bucket/ccm.json && git commit -m "ccm v${VERSION}" && git push )
