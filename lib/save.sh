@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/save.sh — full save: summarize transcript, write timeline + current.md.
 # Requires platform.sh, common.sh, id.sh sourced; CCM_ROOT set.
 

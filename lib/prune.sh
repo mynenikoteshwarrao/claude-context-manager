@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/prune.sh — interactive cleanup of old timeline entries and orphan projects.
 
 # Compute the cutoff timestamp ("now - N days") in YYYY-MM-DD form.

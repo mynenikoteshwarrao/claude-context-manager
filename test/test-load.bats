@@ -10,7 +10,7 @@ setup() {
 }
 teardown() { ccm_teardown_tmphome; }
 
-@test "load: empty storage → empty stdout, exit 0" {
+@test "load: empty storage -> empty stdout, exit 0" {
   mkdir -p "$CCM_TMPHOME/empty"
   cd "$CCM_TMPHOME/empty"
   run ccm_load_main
@@ -18,7 +18,7 @@ teardown() { ccm_teardown_tmphome; }
   [ -z "$output" ]
 }
 
-@test "load: with current.md only → output contains current.md text" {
+@test "load: with current.md only -> output contains current.md text" {
   mkdir -p "$CCM_TMPHOME/project1"
   cd "$CCM_TMPHOME/project1"
   pid="$(printf '%s' "$PWD" | ccm_sha1)"
@@ -31,7 +31,7 @@ teardown() { ccm_teardown_tmphome; }
   [[ "$output" == *"JWT endpoint half-done"* ]]
 }
 
-@test "load: with 5 timeline entries → only 3 most recent rendered" {
+@test "load: with 5 timeline entries -> only 3 most recent rendered" {
   mkdir -p "$CCM_TMPHOME/project2"
   cd "$CCM_TMPHOME/project2"
   pid="$(printf '%s' "$PWD" | ccm_sha1)"

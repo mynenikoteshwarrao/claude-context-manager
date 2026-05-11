@@ -21,14 +21,14 @@ teardown() { ccm_teardown_tmphome; }
   [[ "$result" == *"foo"* ]]
 }
 
-@test "id: no git → SHA1 of cwd" {
+@test "id: no git -> SHA1 of cwd" {
   mkdir -p "$CCM_TMPHOME/nogit"
   cd "$CCM_TMPHOME/nogit"
   result="$(ccm_resolve_project_id)"
   [[ "$result" =~ ^[a-f0-9]{40}$ ]]
 }
 
-@test "id: git but no remote → SHA1 of cwd" {
+@test "id: git but no remote -> SHA1 of cwd" {
   mkdir -p "$CCM_TMPHOME/noremote"
   cd "$CCM_TMPHOME/noremote"
   git init -q

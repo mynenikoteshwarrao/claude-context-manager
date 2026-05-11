@@ -8,11 +8,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/platform.sh"
 
 QUIET=0
-FORCE=0
 for arg in "$@"; do
   case "$arg" in
     --quiet) QUIET=1 ;;
-    --force) FORCE=1 ;;
+    --force) ;;  # accepted for backward-compat; reinstall is always idempotent
     *) echo "install.sh: unknown arg: $arg" >&2; exit 1 ;;
   esac
 done

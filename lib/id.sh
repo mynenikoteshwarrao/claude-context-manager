@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/id.sh — resolve project ID for the current working directory.
 # Requires platform.sh and common.sh sourced first.
 

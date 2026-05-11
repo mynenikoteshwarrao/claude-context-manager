@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/update.sh — self-update dispatcher.
 
 CCM_RELEASE_REPO="${CCM_RELEASE_REPO:-mynenikoteshwarrao/claude-context-manager}"

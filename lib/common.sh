@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/common.sh — shared paths and helpers. Requires platform.sh sourced first.
 
 # Storage root: ~/.claude/context-manager

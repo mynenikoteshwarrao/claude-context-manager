@@ -71,7 +71,7 @@ none"
   echo "$line" | jq -e '.ts and .transcript and .summary' >/dev/null
 }
 
-@test "save: missing claude → stub timeline entry with transcript head/tail" {
+@test "save: missing claude -> stub timeline entry with transcript head/tail" {
   mkdir -p "$CCM_TMPHOME/project4"
   cd "$CCM_TMPHOME/project4"
   # Don't stub claude; PATH won't find it.

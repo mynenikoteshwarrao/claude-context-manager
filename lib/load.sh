@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/load.sh — render the SessionStart context block.
 # Requires platform.sh, common.sh, id.sh sourced first.
 

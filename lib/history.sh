@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/history.sh — list and show timeline entries.
 
 _ccm_list_entries_desc() {

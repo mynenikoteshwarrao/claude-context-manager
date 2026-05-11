@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/flush.sh — light pre-compact save. Refreshes current.md only.
 
 ccm_flush_main() {

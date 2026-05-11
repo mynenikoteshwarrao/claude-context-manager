@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib/platform.sh — OS abstraction layer.
 # Sourced by ccm and other lib scripts.
 
