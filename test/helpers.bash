@@ -42,3 +42,9 @@ ccm_source_lib() {
   local lib_name="$1"
   source "$CCM_REPO_ROOT/lib/$lib_name"
 }
+
+# Stub the remote version checker by overriding _ccm_remote_version
+ccm_stub_remote_version() {
+  local v="$1"
+  eval "_ccm_remote_version() { echo '$v'; }"
+}
