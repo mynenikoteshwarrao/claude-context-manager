@@ -45,3 +45,14 @@ teardown() { ccm_teardown_tmphome; }
   count="$(jq -r '.hooks.SessionStart | length' "$HOME/.claude/settings.json")"
   [ "$count" -eq 1 ]
 }
+
+@test "uninstall: removes symlinks and hook entries" {
+  run bash "$CCM_REPO_ROOT/install.sh" --quiet
+  [ "$status" -eq 0 ]
+  run bash "$CCM_REPO_ROOT/uninstall.sh" --quiet --keep-storage
+  [ "$status" -eq 0 ]
+  [ ! -e "$HOME/.local/bin/ccm" ]
+  [ ! -e "$HOME/.claude/commands/ccm" ]
+  hooks="$(jq -r '.hooks.SessionStart // empty' "$HOME/.claude/settings.json")"
+  [ -z "$hooks" ]
+}
