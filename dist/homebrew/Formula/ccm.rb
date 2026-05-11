@@ -1,7 +1,7 @@
 class Ccm < Formula
   desc "Claude Context Manager — auto-save and restore Claude Code session context"
-  homepage "https://github.com/<user>/claude-context-manager"
-  url "https://github.com/<user>/claude-context-manager/releases/download/v0.1.0/claude-context-manager-0.1.0.tar.gz"
+  homepage "https://github.com/mynenikoteshwarrao/claude-context-manager"
+  url "https://github.com/mynenikoteshwarrao/claude-context-manager/releases/download/v0.1.0/claude-context-manager-0.1.0.tar.gz"
   sha256 "REPLACED_BY_RELEASE_WORKFLOW"
   license "MIT"
 

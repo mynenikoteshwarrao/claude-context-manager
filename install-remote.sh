@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # install-remote.sh — bootstrap installer fetched via curl.
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/<user>/claude-context-manager/main/install-remote.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mynenikoteshwarrao/claude-context-manager/main/install-remote.sh | bash
 
 set -euo pipefail
 
-REPO="${CCM_RELEASE_REPO:-<user>/claude-context-manager}"
+REPO="${CCM_RELEASE_REPO:-mynenikoteshwarrao/claude-context-manager}"
 INSTALL_DIR="${CCM_INSTALL_DIR:-$HOME/.local/share/ccm}"
 
 echo "ccm bootstrap installer"

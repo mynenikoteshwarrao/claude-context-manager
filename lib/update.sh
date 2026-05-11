@@ -1,6 +1,6 @@
 # lib/update.sh — self-update dispatcher.
 
-CCM_RELEASE_REPO="${CCM_RELEASE_REPO:-<user>/claude-context-manager}"
+CCM_RELEASE_REPO="${CCM_RELEASE_REPO:-mynenikoteshwarrao/claude-context-manager}"
 
 # Detect how ccm was installed by inspecting the directory layout.
 # Args: $1 = install root (where bin/ccm + VERSION live).

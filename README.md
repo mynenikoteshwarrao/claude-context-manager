@@ -2,7 +2,7 @@
 
 > Auto-save and auto-restore project context across Claude Code sessions, on macOS and Windows (Git Bash).
 
-[![CI](https://github.com/<user>/claude-context-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/<user>/claude-context-manager/actions/workflows/ci.yml)
+[![CI](https://github.com/mynenikoteshwarrao/claude-context-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/mynenikoteshwarrao/claude-context-manager/actions/workflows/ci.yml)
 
 ## What it does
 
@@ -13,14 +13,14 @@ When you start Claude Code in a project, `ccm` injects a context block showing w
 ### macOS (Homebrew)
 
 ```bash
-brew install <user>/ccm/ccm
+brew install mynenikoteshwarrao/ccm/ccm
 $(brew --prefix)/opt/ccm/libexec/install.sh
 ```
 
 ### Windows (Scoop)
 
 ```pwsh
-scoop bucket add ccm https://github.com/<user>/scoop-ccm
+scoop bucket add ccm https://github.com/mynenikoteshwarrao/scoop-ccm
 scoop install ccm
 # Then in Git Bash:
 bash "$(scoop which ccm | xargs dirname)/../install.sh"
@@ -29,13 +29,13 @@ bash "$(scoop which ccm | xargs dirname)/../install.sh"
 ### Universal (curl)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<user>/claude-context-manager/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mynenikoteshwarrao/claude-context-manager/main/install-remote.sh | bash
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/<user>/claude-context-manager
+git clone https://github.com/mynenikoteshwarrao/claude-context-manager
 cd claude-context-manager
 ./install.sh
 ```

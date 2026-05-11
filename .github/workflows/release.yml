@@ -45,7 +45,7 @@ jobs:
         run: |
           VERSION="$(cat VERSION)"
           SHA="$(awk '{print $1}' SHA256SUMS)"
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/<user>/homebrew-ccm.git" tap
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/mynenikoteshwarrao/homebrew-ccm.git" tap
           cp dist/homebrew/Formula/ccm.rb tap/Formula/ccm.rb
           sed -i "s|v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/claude-context-manager-[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|v${VERSION}/claude-context-manager-${VERSION}|" tap/Formula/ccm.rb
           sed -i "s/REPLACED_BY_RELEASE_WORKFLOW/${SHA}/" tap/Formula/ccm.rb
@@ -58,7 +58,7 @@ jobs:
         run: |
           VERSION="$(cat VERSION)"
           SHA="$(awk '{print $1}' SHA256SUMS)"
-          git clone "https://x-access-token:${BUCKET_TOKEN}@github.com/<user>/scoop-ccm.git" bucket
+          git clone "https://x-access-token:${BUCKET_TOKEN}@github.com/mynenikoteshwarrao/scoop-ccm.git" bucket
           cp dist/scoop/bucket/ccm.json bucket/bucket/ccm.json
           sed -i "s/REPLACED_BY_RELEASE_WORKFLOW/${SHA}/" bucket/bucket/ccm.json
           sed -i "s/0.1.0/${VERSION}/g" bucket/bucket/ccm.json

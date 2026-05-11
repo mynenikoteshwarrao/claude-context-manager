@@ -2,7 +2,7 @@
   "name": "claude-context-manager",
   "version": "0.1.0",
   "description": "Auto-save and auto-restore project context across Claude Code sessions.",
-  "author": "<user>",
+  "author": "mynenikoteshwarrao",
   "license": "MIT",
   "commands": [
     {"name": "ccm:load",    "file": "commands/ccm/load.md"},
