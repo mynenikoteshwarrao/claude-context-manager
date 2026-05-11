@@ -25,11 +25,12 @@ if [ -z "$tag" ] || [ "$tag" = "null" ]; then
 fi
 echo "  tag:    $tag"
 
-# Download tarball.
+# Download tarball. Use the release filename verbatim so SHA256SUMS lookups match.
 tmp="$(mktemp -d -t ccm-bootstrap-XXXXXX)"
 trap 'rm -rf "$tmp"' EXIT
-tarball="$tmp/ccm.tar.gz"
-url="https://github.com/$REPO/releases/download/$tag/claude-context-manager-${tag#v}.tar.gz"
+tarball_name="claude-context-manager-${tag#v}.tar.gz"
+tarball="$tmp/$tarball_name"
+url="https://github.com/$REPO/releases/download/$tag/$tarball_name"
 echo "Downloading $url"
 curl -fsSL "$url" -o "$tarball"
 
