@@ -46,6 +46,9 @@ _dispatch() {
     echo "Run 'ccm' for usage." >&2
     return 1
   fi
+  # All dispatched libs use ccm_resolve_project_id from id.sh.
+  # shellcheck source=../lib/id.sh
+  source "$CCM_ROOT/lib/id.sh"
   # shellcheck disable=SC1090
   source "$lib"
   # Convention: each lib defines ccm_<cmd>_main
