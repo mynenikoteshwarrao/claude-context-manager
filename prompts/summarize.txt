@@ -1,0 +1,17 @@
+You are summarizing a Claude Code session for a project context manager.
+
+The transcript follows. Produce output in this exact format:
+
+## SUMMARY
+A concise (≤200 word) recap of: what was worked on, what got decided, what's left open. No bullet points; flowing prose.
+
+## IN_PROGRESS
+The specific things the user was actively working on when the session ended — tasks not yet finished, files mid-edit, decisions pending. If the session reached a clean stopping point, write the single word "none".
+
+Rules:
+- Do not include any text before "## SUMMARY".
+- Do not include any text after the IN_PROGRESS section.
+- No code blocks, no headers other than the two above.
+- Refer to files and components by name, not by chat-message index.
+
+Transcript:

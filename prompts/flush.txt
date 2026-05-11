@@ -1,0 +1,8 @@
+You are extracting in-progress state from a Claude Code session that is about to be context-compacted. Only return the active work, not a full summary.
+
+Output format (no preamble, no closing text):
+
+## IN_PROGRESS
+The specific things being worked on right now: open tasks, mid-edit files, pending decisions. Keep it under 100 words. If nothing is in progress, write "none".
+
+Transcript:
