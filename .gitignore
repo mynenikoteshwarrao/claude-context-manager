@@ -1,0 +1,15 @@
+# Test artifacts
+test/tmp/
+test/.coverage
+
+# Local overrides
+.env
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
