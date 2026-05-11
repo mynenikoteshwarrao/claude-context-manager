@@ -1,0 +1,5 @@
+{"role":"user","content":"Help me design a login flow"}
+{"role":"assistant","content":"Sure, what auth scheme are you using?"}
+{"role":"user","content":"JWT with refresh tokens"}
+{"role":"assistant","content":"Let's start with the token endpoint. I'll write it in src/auth.ts."}
+{"role":"user","content":"Sounds good"}

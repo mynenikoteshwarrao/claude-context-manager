@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {"command": "echo existing-hook"}
+    ]
+  },
+  "theme": "dark"
+}
