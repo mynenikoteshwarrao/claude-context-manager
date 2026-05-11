@@ -28,6 +28,7 @@ The user works across multiple projects and wants each project's context to:
 - Track multiple projects independently.
 - Both automatic (hook-driven) and manual (slash command) load/save.
 - Run on **macOS** (native bash) and **Windows** (Git Bash). Single shared codebase.
+- Distribute via **Claude Code plugin** (primary), **curl + GitHub Releases** (fallback), and native **Homebrew + Scoop** packages. Self-update via `ccm update`.
 
 ### Out of scope (deferred to future specs)
 
@@ -41,6 +42,7 @@ The user works across multiple projects and wants each project's context to:
 - Search across timeline entries (`ccm search` command).
 - Parallel-session conflict handling (two terminals in the same project — MVP is last-writer-wins).
 - Native PowerShell implementation on Windows (Git Bash is the only supported Windows shell in MVP).
+- npm distribution (would require Node as a runtime dep — explicitly avoided).
 
 ## 3. Architecture
 
@@ -65,6 +67,7 @@ The user works across multiple projects and wants each project's context to:
 │    /ccm:history  → ccm history                              │
 │    /ccm:show N   → ccm show N                               │
 │    /ccm:prune    → ccm prune                                │
+│    /ccm:update   → ccm update                               │
 └─────────────────────────────────────────────────────────────┘
               │            │            │
               ▼            ▼            ▼
@@ -100,6 +103,8 @@ A bash script installed at `~/.local/bin/ccm` (symlinked from the repo on macOS;
 | `ccm history` | List timeline entries with timestamps |
 | `ccm show N` | Print timeline entry #N to stdout |
 | `ccm prune` | Interactively delete old timeline entries or orphaned projects |
+| `ccm update` | Check for a newer release and reinstall in-place |
+| `ccm version` | Print current version (read from VERSION file) |
 
 ### Hooks
 
@@ -173,31 +178,39 @@ The Stop hook fires after every assistant turn. Too noisy and expensive for summ
 ## 5. Components and files we ship
 
 ```
-claude-context-manager/
+claude-context-manager/                  # main repo
 ├── bin/
-│   └── ccm                      # main entry; dispatches to lib/*.sh
+│   └── ccm                              # main entry; dispatches to lib/*.sh
 ├── lib/
-│   ├── id.sh                    # resolve project ID
-│   ├── load.sh                  # render injected context block
-│   ├── save.sh                  # full save (summarize + write timeline)
-│   ├── flush.sh                 # pre-compact lightweight save
-│   ├── history.sh               # list/show timeline entries
-│   ├── prune.sh                 # interactive cleanup
-│   ├── common.sh                # shared helpers (paths, logging, token budget)
-│   └── platform.sh              # OS detection + shasum/sha1sum + path conversion
-├── commands/                    # Claude Code slash command files
+│   ├── id.sh                            # resolve project ID
+│   ├── load.sh                          # render injected context block
+│   ├── save.sh                          # full save (summarize + write timeline)
+│   ├── flush.sh                         # pre-compact lightweight save
+│   ├── history.sh                       # list/show timeline entries
+│   ├── prune.sh                         # interactive cleanup
+│   ├── update.sh                        # self-update logic
+│   ├── common.sh                        # shared helpers (paths, logging, token budget)
+│   └── platform.sh                      # OS detection + shasum/sha1sum + path conversion
+├── commands/                            # Claude Code slash command files
 │   └── ccm/
-│       ├── load.md              # /ccm:load    → !ccm load
-│       ├── save.md              # /ccm:save    → !ccm save
-│       ├── history.md           # /ccm:history → !ccm history
-│       ├── show.md              # /ccm:show    → !ccm show "$ARGUMENTS"
-│       └── prune.md             # /ccm:prune   → !ccm prune
+│       ├── load.md                      # /ccm:load    → !ccm load
+│       ├── save.md                      # /ccm:save    → !ccm save
+│       ├── history.md                   # /ccm:history → !ccm history
+│       ├── show.md                      # /ccm:show    → !ccm show "$ARGUMENTS"
+│       ├── prune.md                     # /ccm:prune   → !ccm prune
+│       └── update.md                    # /ccm:update  → !ccm update
 ├── prompts/
-│   ├── summarize.txt            # prompt for full session summarization
-│   └── flush.txt                # prompt for pre-compact in-progress extraction
-├── install.sh                   # macOS install (symlink + register hooks)
-├── install.bat                  # Windows entry point that calls install.sh under Git Bash
-├── uninstall.sh                 # reverse install.sh
+│   ├── summarize.txt                    # prompt for full session summarization
+│   └── flush.txt                        # prompt for pre-compact in-progress extraction
+├── plugin/
+│   └── manifest.json                    # Claude Code plugin manifest (hooks + commands)
+├── install.sh                           # macOS/Linux install (also runs under Git Bash)
+├── install.bat                          # Windows entry point that calls install.sh under Git Bash
+├── uninstall.sh                         # reverse install.sh
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                       # bats test matrix on macos + windows
+│       └── release.yml                  # tag-triggered release pipeline
 ├── test/
 │   ├── test-id.bats
 │   ├── test-load.bats
@@ -205,14 +218,23 @@ claude-context-manager/
 │   ├── test-flush.bats
 │   ├── test-history.bats
 │   ├── test-prune.bats
+│   ├── test-update.bats
 │   ├── test-install.bats
 │   ├── test-platform.bats
 │   └── fixtures/
-│       ├── transcripts/         # sample .jsonl files
-│       ├── storage/             # expected post-save storage state
-│       └── settings/            # sample ~/.claude/settings.json
+│       ├── transcripts/                 # sample .jsonl files
+│       ├── storage/                     # expected post-save storage state
+│       └── settings/                    # sample ~/.claude/settings.json
 ├── README.md
-└── VERSION
+└── VERSION                              # SemVer string, e.g. "0.1.0"
+
+homebrew-ccm/                            # separate repo (Mac users)
+└── Formula/
+    └── ccm.rb                           # Homebrew formula
+
+scoop-ccm/                               # separate repo (Windows users)
+└── bucket/
+    └── ccm.json                         # Scoop manifest
 ```
 
 ## 6. Technology stack
@@ -309,7 +331,140 @@ If future scope adds Linux as a first-class target, or if Windows path/symlink e
 
 `./uninstall.sh` reverses each step, prompting before deleting any storage in `~/.claude/context-manager/`.
 
-## 8. Error handling
+## 8. Distribution
+
+Four channels, ranked by recommended user preference. All resolve to the same source — the same `<repo>` is the source of truth; each channel is a different way to put it on the user's machine.
+
+### 8.1 Channel A — Claude Code plugin (primary)
+
+`plugin/manifest.json` registers hooks and slash commands declaratively. Users install with one command:
+
+```
+/plugin install <you>/claude-context-manager
+```
+
+Claude Code's plugin system clones the repo to its plugin directory, reads the manifest, and registers the hooks + slash commands automatically. No `./install.sh` needed in this path — the plugin manifest *is* the install descriptor.
+
+**Caveats to verify during planning:**
+
+- Whether the plugin system supports user-level hooks (vs. only per-project).
+- Whether plugin slash commands can shell out via `!ccm` syntax with our exact path conventions.
+- Whether plugin install honors our cross-platform symlink requirements (or whether the plugin runtime handles binary linkage itself).
+
+If any of these gate fail, channel A is documented as "not yet supported" in v0.1 and reintroduced in a later release. Channels B/C/D cover the full user base in the meantime.
+
+### 8.2 Channel B — curl-pipe-bash + GitHub Releases (fallback, universal)
+
+The universal one-liner. Works identically on macOS and Windows Git Bash:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/<you>/claude-context-manager/main/install-remote.sh | bash
+```
+
+`install-remote.sh` is a tiny bootstrap (≤ 50 lines) that:
+
+1. Detects OS.
+2. Determines the latest release tag from GitHub's API.
+3. Downloads the `.tar.gz` asset to `~/.local/share/ccm/`.
+4. Extracts it.
+5. Runs the bundled `install.sh`.
+
+**For security-conscious users**, the README documents the alternative:
+
+```sh
+git clone https://github.com/<you>/claude-context-manager
+cd claude-context-manager
+./install.sh
+```
+
+GitHub Releases hosts the canonical artifacts:
+
+- `claude-context-manager-<version>.tar.gz` — source tree, includes `install.sh`.
+- `SHA256SUMS` — checksum file for verification.
+- `SHA256SUMS.asc` — GPG signature (if/when we set up signing; deferred decision).
+
+### 8.3 Channel C — Homebrew tap (macOS) and Scoop bucket (Windows)
+
+For users who prefer native package managers.
+
+**Homebrew (separate `homebrew-ccm` repo):**
+
+```sh
+brew tap <you>/ccm
+brew install ccm
+brew upgrade ccm
+```
+
+`Formula/ccm.rb` declares dependencies (`bash`, `jq`) and points at the latest GitHub Release tarball. The formula's `install` block runs `./install.sh --no-deps` (skipping the dep checks Homebrew already enforced).
+
+**Scoop (separate `scoop-ccm` repo):**
+
+```sh
+scoop bucket add ccm https://github.com/<you>/scoop-ccm
+scoop install ccm
+scoop update ccm
+```
+
+`bucket/ccm.json` declares dependencies (`jq`, `git`) and uses Scoop's `post_install` hook to run `install.sh` against the user's `$HOME`.
+
+Both Formula and manifest are updated automatically by the release workflow (§9).
+
+### 8.4 Channel D — Self-update via `ccm update`
+
+Independent of how the user first installed. Run anytime:
+
+```sh
+ccm update
+```
+
+Behavior:
+
+1. Read installed version from VERSION file at the install location.
+2. Detect install channel by inspecting paths: a `.git/` directory in the install root → clone install; absence of `.git/` but presence of `~/.local/share/ccm/` → tarball install; install location under Homebrew's prefix → Homebrew install; under Scoop's apps dir → Scoop install; install location under Claude Code's plugin dir → plugin install.
+3. Dispatch the right update:
+   - **Clone:** `git pull` in the repo, then re-run `./install.sh`.
+   - **Tarball:** re-run the curl-pipe-bash bootstrap.
+   - **Homebrew:** print `brew upgrade ccm` and exit (do not call brew from inside ccm — that's a layering violation).
+   - **Scoop:** print `scoop update ccm` and exit.
+   - **Plugin:** print the appropriate `/plugin update ccm` command for Claude Code and exit.
+4. Print before/after version, ask the user to restart Claude Code so hooks reload.
+
+`ccm update --check` is a no-op variant: just prints "Update available: 0.1.2 → 0.2.0" if newer, exits 0. Used by an optional `SessionStart` hook line to nudge users (off by default; opt-in via `~/.claude/context-manager/config`).
+
+## 9. Versioning and release process
+
+### 9.1 Versioning
+
+Strict [SemVer 2.0](https://semver.org). Single source of truth: the `VERSION` file at repo root, format `MAJOR.MINOR.PATCH` (no `v` prefix). `ccm version` reads this file.
+
+- **MAJOR** bump: storage layout change requiring migration, breaking subcommand change, breaking hook contract change.
+- **MINOR** bump: new subcommand, new slash command, new optional config knob.
+- **PATCH** bump: bug fix, doc fix, no user-visible behavior change.
+
+`v0.x.y` series is pre-1.0 — minor bumps may include small breaking changes if necessary (documented in CHANGELOG).
+
+### 9.2 Release workflow (`.github/workflows/release.yml`)
+
+Triggered on push of a tag matching `v*.*.*`:
+
+1. Validate tag matches `VERSION` file contents (fail fast if drift).
+2. Run the full bats suite on `macos-latest` and `windows-latest`. Abort on any failure.
+3. Build the source tarball: `git archive --format=tar.gz --prefix=claude-context-manager-${VERSION}/ ${TAG}`.
+4. Compute `SHA256SUMS`.
+5. Create a GitHub Release with the tarball + checksums attached. Body is auto-extracted from CHANGELOG.md section matching the version.
+6. **Update Homebrew tap:** clone `homebrew-ccm`, regenerate `Formula/ccm.rb` with new URL + sha256, commit + push.
+7. **Update Scoop bucket:** clone `scoop-ccm`, regenerate `bucket/ccm.json` with new URL + hash, commit + push.
+8. **(Future) Update Claude Code plugin registry:** if a plugin registry exists, publish the manifest. Otherwise no-op for now.
+
+### 9.3 CHANGELOG
+
+`CHANGELOG.md` at repo root, [Keep a Changelog](https://keepachangelog.com/) format. Each release section is generated from PR labels (`feat:`, `fix:`, `docs:`, `chore:`). Manually editable before tagging.
+
+### 9.4 Release authority
+
+In v0.x, only the repo maintainer (you) holds the release token. The release workflow uses a dedicated `GITHUB_TOKEN` with `contents: write` on the main repo and `contents: write` on both the homebrew-ccm and scoop-ccm repos. Token scope is the narrowest that works.
+
+## 10. Error handling
 
 The iron rule: **the context manager never blocks or breaks a Claude Code session.** Every failure path degrades to "no-op + write to `~/.claude/context-manager/log`".
 
@@ -328,10 +483,12 @@ The iron rule: **the context manager never blocks or breaks a Claude Code sessio
 | **Windows: `cygpath` missing** | Detect at runtime; abort install with a "your Git Bash is too old, please update Git for Windows" message. |
 | **Windows: path crosses Git Bash boundary unexpectedly** | `lib/platform.sh` normalizes; if normalization fails, log the raw value and continue with best-effort. |
 | **Windows: file path contains spaces** (e.g., `C:\Program Files\...`) | All path handling quotes consistently; covered by `test-platform.bats`. |
+| **Update: GitHub API rate-limited or offline** | `ccm update` prints "couldn't reach GitHub" and exits non-zero. Never partially upgrades. |
+| **Update: SHA256 mismatch on downloaded tarball** | Abort, leave existing install untouched, surface the mismatch. |
 
 All errors and warnings are appended to `~/.claude/context-manager/log` with timestamp, OS, project ID, and subcommand.
 
-## 9. Testing strategy
+## 11. Testing strategy
 
 ### Unit tests (bats-core)
 
@@ -343,12 +500,13 @@ One `test-<lib>.bats` file per lib. Tests run against fixture data — no real `
 - `test-flush.bats`: in-progress extraction only, no timeline entry created.
 - `test-history.bats`: listing and showing entries by index and by date.
 - `test-prune.bats`: interactive prune flow (driven by `bats` input stubs).
+- `test-update.bats`: install-channel detection, version-comparison logic, dry-run dispatch for each channel (no real network calls).
 - `test-install.bats`: idempotent install, merge-vs-overwrite logic, uninstall reverses everything.
 - `test-platform.bats`: OS detection, SHA1 helper, path conversion no-op on macOS / round-trip on Windows, symlink + shim fallback.
 
-### CI matrix
+### CI matrix (`.github/workflows/ci.yml`)
 
-GitHub Actions running the bats suite on `macos-latest` and `windows-latest` (with Git Bash). Both must pass for a green build.
+The bats suite runs on `macos-latest` and `windows-latest` (with Git Bash) on every PR. Both must pass for a green build.
 
 ### Integration test
 
@@ -372,9 +530,10 @@ After local install (run on **each** target OS):
 4. **Mid-session compaction**: run a session long enough to trigger compaction. Verify `current.md` updated mid-session without a duplicate timeline entry.
 5. **Slash command**: in a session, type `/ccm:history` — verify the list renders.
 6. **Multiple projects**: switch to a different repo, run `claude`, verify no bleed.
-7. **(Windows only)**: verify path-with-spaces works by installing into a user account whose name contains a space (or symlink the test fixture into `~/Documents/My Repos/test`).
+7. **Self-update**: from one version, tag the next, watch the release workflow publish, then run `ccm update` and verify the new version is active.
+8. **(Windows only)**: verify path-with-spaces works by installing into a user account whose name contains a space (or symlink the test fixture into `~/Documents/My Repos/test`).
 
-## 10. Open questions for the implementation plan
+## 12. Open questions for the implementation plan
 
 These are decisions to confirm during planning, not blockers for spec approval:
 
@@ -383,8 +542,10 @@ These are decisions to confirm during planning, not blockers for spec approval:
 - Exact wording of `prompts/summarize.txt` — will iterate during implementation against real transcripts.
 - Whether `install.sh` should also offer to update an existing global `bashrc`/`zshrc` to put `~/.local/bin` on PATH, or just print a message.
 - Whether Windows install should print a Developer Mode reminder upfront, or only when the first symlink attempt fails.
+- **Claude Code plugin system constraints** (the §8.1 caveats): what exactly the plugin manifest supports for hooks, slash commands, and cross-platform paths. If gaps exist, channel A ships in a later release.
+- Whether GPG-signing release artifacts is in v0.1 or deferred.
 
-## 11. Success criteria
+## 13. Success criteria
 
 The MVP is successful when:
 
@@ -394,6 +555,8 @@ The MVP is successful when:
 4. Zero documented cases of the context manager blocking or breaking a Claude Code session.
 5. `/ccm:history`, `/ccm:show`, and `/ccm:prune` all work as documented in the README.
 6. The full test suite passes (`bats test/`) on both `macos-latest` and `windows-latest` in CI.
+7. A user can install via **at least three** of {Claude Code plugin, curl one-liner, Homebrew tap, Scoop bucket} (channel A is best-effort; B, C-Mac, and C-Win must all work for v0.1).
+8. Tagging a release pushes updated Formula and Scoop manifest automatically; `ccm update` upgrades a running install in-place.
 
 ---
 
