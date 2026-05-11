@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ccm — Claude Context Manager
+# Dispatches to lib/<subcommand>.sh
+
+set -euo pipefail
+
+# Resolve repo root (script may be invoked via symlink).
+CCM_SELF="${BASH_SOURCE[0]}"
+while [ -L "$CCM_SELF" ]; do
+  CCM_SELF="$(readlink "$CCM_SELF")"
+done
+CCM_ROOT="$(cd "$(dirname "$CCM_SELF")/.." && pwd)"
+export CCM_ROOT
+
+# Source platform + common always.
+# shellcheck source=../lib/platform.sh
+source "$CCM_ROOT/lib/platform.sh"
+# shellcheck source=../lib/common.sh
+source "$CCM_ROOT/lib/common.sh"
+
+_usage() {
+  cat <<EOF
+ccm — Claude Context Manager v$(cat "$CCM_ROOT/VERSION")
+
+Usage: ccm <subcommand> [args]
+
+Subcommands:
+  id           Print the project ID for the current directory
+  load         Print restored context block to stdout
+  save         Summarize current session and write timeline entry
+  flush        Refresh in-progress state (pre-compact)
+  history      List session summaries for this project
+  show N       Print summary #N
+  prune        Interactive cleanup
+  update       Self-update to the latest release
+  version      Print version
+EOF
+}
+
+# Load and invoke a subcommand handler.
+_dispatch() {
+  local cmd="$1"; shift
+  local lib="$CCM_ROOT/lib/${cmd}.sh"
+  if [ ! -f "$lib" ]; then
+    echo "ccm: unknown subcommand: $cmd" >&2
+    echo "Run 'ccm' for usage." >&2
+    return 1
+  fi
+  # shellcheck disable=SC1090
+  source "$lib"
+  # Convention: each lib defines ccm_<cmd>_main
+  local fn="ccm_${cmd}_main"
+  if ! declare -F "$fn" >/dev/null; then
+    echo "ccm: lib/${cmd}.sh missing ${fn}()" >&2
+    return 1
+  fi
+  "$fn" "$@"
+}
+
+main() {
+  if [ "$#" -eq 0 ]; then
+    _usage
+    return 1
+  fi
+  case "$1" in
+    -h|--help) _usage; return 0 ;;
+    version)   cat "$CCM_ROOT/VERSION"; return 0 ;;
+    id)
+      # shellcheck source=../lib/id.sh
+      source "$CCM_ROOT/lib/id.sh"
+      ccm_resolve_project_id
+      return 0
+      ;;
+    *)
+      _dispatch "$@"
+      ;;
+  esac
+}
+
+main "$@"
