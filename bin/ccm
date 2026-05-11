@@ -4,10 +4,16 @@
 
 set -euo pipefail
 
-# Resolve repo root (script may be invoked via symlink).
+# Resolve repo root through any chain of symlinks.
+# Homebrew uses relative symlinks (bin/ccm -> ../Cellar/ccm/.../bin/ccm),
+# so we must anchor each relative target to its containing dir.
 CCM_SELF="${BASH_SOURCE[0]}"
 while [ -L "$CCM_SELF" ]; do
-  CCM_SELF="$(readlink "$CCM_SELF")"
+  target="$(readlink "$CCM_SELF")"
+  case "$target" in
+    /*) CCM_SELF="$target" ;;
+     *) CCM_SELF="$(cd "$(dirname "$CCM_SELF")" && pwd)/$target" ;;
+  esac
 done
 CCM_ROOT="$(cd "$(dirname "$CCM_SELF")/.." && pwd)"
 export CCM_ROOT
