@@ -1,0 +1,21 @@
+{
+  "name": "claude-context-manager",
+  "version": "0.1.0",
+  "description": "Auto-save and auto-restore project context across Claude Code sessions.",
+  "author": "<user>",
+  "license": "MIT",
+  "commands": [
+    {"name": "ccm:load",    "file": "commands/ccm/load.md"},
+    {"name": "ccm:save",    "file": "commands/ccm/save.md"},
+    {"name": "ccm:history", "file": "commands/ccm/history.md"},
+    {"name": "ccm:show",    "file": "commands/ccm/show.md"},
+    {"name": "ccm:prune",   "file": "commands/ccm/prune.md"},
+    {"name": "ccm:update",  "file": "commands/ccm/update.md"}
+  ],
+  "hooks": {
+    "SessionStart": "bin/ccm load",
+    "SessionEnd":   "bin/ccm save \"$CLAUDE_TRANSCRIPT_PATH\"",
+    "PreCompact":   "bin/ccm flush \"$CLAUDE_TRANSCRIPT_PATH\""
+  },
+  "post_install": "install.sh"
+}
